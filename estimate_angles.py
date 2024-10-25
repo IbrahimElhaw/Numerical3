@@ -220,7 +220,7 @@ def redraw(smoothed_v, time, strokes_list, angles_list, regenerated_curve, one_s
     return acX, acY
 
 
-def correct_local_extrems(local_min, local_max, velocity, threshold_height=0.07, threshold_diff=0.07):
+def correct_local_extrems(local_min, local_max, velocity, threshold_height=0.01, threshold_diff=0.03):
     summit = np.max(velocity)
     local_min_copy = local_min.copy()
     local_max_copy = local_max.copy()
@@ -355,9 +355,9 @@ def modify_all_parameters(strokes, angles):
     return modified_strokes, modified_angles
 
 
-def modify_stroke_parameters(D, sigma, mu, t_0, theta_s, theta_e, d_mu=0.15, d_sigma=0.15, d_t0=0.01, d_D=0.2,
-                             d_theta_s=0.3,
-                             d_theta_e=0.3):
+def modify_stroke_parameters(D, sigma, mu, t_0, theta_s, theta_e, d_mu=0.05, d_sigma=0.10, d_t0=0.01, d_D=0.2,
+                             d_theta_s=0.1,
+                             d_theta_e=0.1):
     changed_D = np.random.normal(D, (D * d_D) ** 2)
     changed_sigma = np.random.normal(sigma, (sigma * d_sigma) ** 2)
     changed_mu = np.random.normal(mu, (mu * d_mu) ** 2)
@@ -387,6 +387,7 @@ def represent_curve_lognormal(X_, Y_, T_, V, smoothed_V):
     best_dtw = calculate_dtw_measure(X_, Y_, full_X, full_Y)
     print("DTW after frst mode: ", best_dtw)
     diff_curve = [smoothed_V[stroke] - regenerated_curve[stroke] for stroke in range(len(smoothed_V))]
+    # plt.axis("equal")
     # for plane in range(len(T_)):
     #     plt.plot(X_[plane], Y_[plane], label="original", color="black")
     #     plt.plot(full_X[plane], full_Y[plane], label="made1", color="blue")
@@ -401,20 +402,22 @@ def represent_curve_lognormal(X_, Y_, T_, V, smoothed_V):
             diff_curve = [diff_curve[stroke] - regenerated_curve2[stroke] for stroke in range(len(smoothed_V))]
         else:
             break
-    print("DTW after second mode: ", calculate_dtw_measure(X_, Y_, full_X, full_Y))
+    DTW = calculate_dtw_measure(X_, Y_, full_X, full_Y)
+    print("DTW after second mode: ", DTW)
 
     # plt.figure(2)
+    # plt.axis("equal")
     # for plane in range(len(T_)):
     #     plt.plot(X_[plane], Y_[plane], label="original", color="black")
     #     plt.plot(full_X[plane], full_Y[plane], label="made2", color="blue")
     #     plt.legend()
 
-    save_data(full_X, full_Y, V1, name, "synthetic/represented")
-    return parameter_matrix, angles_matrix, regenerated_curve2
+    save_data(full_X, full_Y, V1, name+f"_{DTW}", "synthetic/represented")
+    return parameter_matrix, angles_matrix, regenerated_curve2, DTW
 
 
 def represent_manipulated_curve_lognormal(parameter_matrix_, angles_matrix_, regenerated_curve2_, smoothed_V_, X_,
-                                          Y_, T_):
+                                          Y_, T_, end_DTW):
     manipulated_parameters, manipulated_angles = modify_all_parameters(parameter_matrix_, angles_matrix_)
     manipulated_regenerated_curve = generate_curve_from_parameters(manipulated_parameters, T_)
     manipulated_full_X, manipulated_full_Y = full_redraw(smoothed_V_,
@@ -424,6 +427,7 @@ def represent_manipulated_curve_lognormal(parameter_matrix_, angles_matrix_, reg
     print("DTW manipulation frst mode: ", calculate_dtw_measure(X_, Y_, manipulated_full_X, manipulated_full_Y))
 
     # plt.figure(3)
+    # plt.axis("equal")
     # for plane in range(len(T_)):
     #     plt.plot(X_[plane], Y_[plane], label="original", color="black")
     #     plt.plot(manipulated_full_X[plane], manipulated_full_Y[plane], label="made3", color="blue")
@@ -445,15 +449,21 @@ def represent_manipulated_curve_lognormal(parameter_matrix_, angles_matrix_, reg
                                range(len(smoothed_V_))]
         else:
             break
-    print("DTW manipulation second mode: ", calculate_dtw_measure(X_, Y_, manipulated_full_X, manipulated_full_Y))
+    end2_DTW = calculate_dtw_measure(X_, Y_, manipulated_full_X, manipulated_full_Y)
+    print("DTW manipulation second mode: ", end2_DTW)
+    if end2_DTW < 2.5*end_DTW:
+        save_data(manipulated_full_X, manipulated_full_Y, V1, name, "synthetic/manipulated_2_modes")
+    else:
+        save_data(manipulated_full_X, manipulated_full_Y, V1, name, "synthetic/second mode edge data")
 
     # plt.figure(4)
+    # plt.axis("equal")
     # for plane in range(len(T_)):
     #     plt.plot(X_[plane], Y_[plane], label="original", color="black")
     #     plt.plot(manipulated_full_X[plane], manipulated_full_Y[plane], label="made4", color="blue")
     #     plt.legend()
     # plt.show()
-    save_data(manipulated_full_X, manipulated_full_Y, V1, name, "synthetic/manipulated_2_modes")
+
 
 
 def save_data(X1, Y1, V1, name, folder="synthetic/original"):
@@ -468,23 +478,35 @@ def check_file_exists(name, directory="synthetic/original"):
     return os.path.exists(file_path)
 
 if __name__ == '__main__':
+    # 21.803250541503335
     persons_list = pd.read_csv('subject.csv', sep=',')["Z_PK"].to_numpy()
     character_list = range(10)
     finger_list = ("index", "thumb")
-    glyph_list = range(10)
+    glyph_list = range(4)
 
     combinations = list(itertools.product(persons_list, character_list, finger_list,
                                           glyph_list))
+    print(len(combinations))
     random.shuffle(combinations)
-    sample_size = 100
+    sample_size = 300
     sampled_combinations = combinations[:sample_size]
 
-    for (person, character, finger, glyph) in sampled_combinations:
-        print((person, character, finger, glyph))
+    # person = 53
+    # character = 6
+    # X1, Y1, T1, V1, smoothed_V1, bio_infos = get_preprocessed_data(person, character)
+    # name = f"{person}_{character}_{"index"}_{0}_{bio_infos[0]}_{bio_infos[1]}_{bio_infos[2]}"
+    # save_data(X1, Y1, V1, name)
+    #
+    # parameter_matrix, angles_matrix, regenerated_curve2 = represent_curve_lognormal(X1, Y1, T1, V1, smoothed_V1)
+    # represent_manipulated_curve_lognormal(parameter_matrix, angles_matrix, regenerated_curve2, smoothed_V1, X1, Y1, T1)
 
+
+    for index, (person, character, finger, glyph) in enumerate(sampled_combinations):
+        print(f"{index+1}: {(person, character, finger, glyph)}")
         try:
             X1, Y1, T1, V1, smoothed_V1, bio_infos = get_preprocessed_data(person, character, finger=finger, glyph=glyph)
         except ValueError:
+            print("glyph misses")
             continue
 
         # bio_infos: tuple (sex, hand, age)
@@ -494,5 +516,5 @@ if __name__ == '__main__':
             continue
 
         save_data(X1, Y1, V1, name)
-        parameter_matrix, angles_matrix, regenerated_curve2 = represent_curve_lognormal(X1, Y1, T1, V1, smoothed_V1)
-        represent_manipulated_curve_lognormal(parameter_matrix, angles_matrix, regenerated_curve2, smoothed_V1, X1, Y1, T1)
+        parameter_matrix, angles_matrix, regenerated_curve2, end_DTW = represent_curve_lognormal(X1, Y1, T1, V1, smoothed_V1)
+        represent_manipulated_curve_lognormal(parameter_matrix, angles_matrix, regenerated_curve2, smoothed_V1, X1, Y1, T1, end_DTW)

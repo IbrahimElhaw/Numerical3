@@ -47,7 +47,7 @@ def show_min_max(x, y, t, v, smoothed_v, loc_min, loc_max):
     show_data(x, y)
 
 
-def     correct_local_extrems(local_min, local_max, velocity, threshold_height=0.07, threshold_diff=0.07):
+def correct_local_extrems(local_min, local_max, velocity, threshold_height=0.01, threshold_diff=0.03):
     summit = np.max(velocity)
     local_min_copy = local_min.copy()
     local_max_copy = local_max.copy()
@@ -331,7 +331,7 @@ def generate_curve_from_parameters(para_matrix, timestamps):
 
 
 if __name__ == '__main__':
-    X, Y, T, V, smoothed_V, bio_infos = get_preprocessed_data(53, 8)
+    X, Y, T, V, smoothed_V, bio_infos = get_preprocessed_data(53, 8, smoothing_window=3, smooth_poly=5)
     parameter_matrix = get_phy_param_mat(T, smoothed_V)
     for plane in parameter_matrix:
         print("new plane")
@@ -340,10 +340,10 @@ if __name__ == '__main__':
     regenerated_curve = generate_curve_from_parameters(parameter_matrix, T)
     for stroke in range(len(T)):
         pass
-        # plt.plot(T[stroke], regenerated_curve[stroke], label="regenerated", color="black")
-        # plt.plot(T[stroke], smoothed_V[stroke], label="original", color="red")
-        # plt.plot(T[stroke], smoothed_V[stroke]-regenerated_curve[stroke], label="original", color="grey")
-        #
-        # plt.legend()
-        # plt.show()
+        plt.plot(T[stroke], regenerated_curve[stroke], label="regenerated", color="black")
+        plt.plot(T[stroke], smoothed_V[stroke], label="smoothed", color="red")
+        plt.plot(T[stroke], V[stroke], label="original", color="grey")
+
+        plt.legend()
+        plt.show()
     print(np.shape(parameter_matrix))

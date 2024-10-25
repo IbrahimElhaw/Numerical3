@@ -21,6 +21,7 @@ def calculate_velocity(x, y, timestamps):
         velocity.append(velocity_one_stroke)
     return velocity
 
+
 def preprocess(t, x, y):
 
     # Normalize X and Y coordinates
@@ -36,8 +37,8 @@ def preprocess(t, x, y):
 
     x = extra_smooth(x, int(frequency/10))  # int(n_points/5)
     y = extra_smooth(y, int(frequency/10))  # int(n_points/5)
-
     return np.array(x), np.array(y), np.array(t), np.array(smoothed_velocity), np.array(velocity)
+
 
 def normalize(x, y):
     m_x = np.min(x)
@@ -99,25 +100,25 @@ def get_preprocessed_data(person,
                           smoothing_window=6,
                           smooth_poly=5,
                           nfs=15,
+                          n_points=None,
                           finger="index",
                           glyph=None):
     X, Y, T, bio_infos_ = data.retrieve_data(person, charachter, finger, glyph)
     X, Y = shift_to_origin(X, Y)
     V = calculate_velocity(X, Y, T)
-    print(smoothing_window)
     smoothed_V = smooth_V(V,  smoothing_window, int(smooth_poly))
-    X = [interpolate(x, nfs=nfs, interp="cubic") for x in X]
-    Y = [interpolate(y, nfs=nfs, interp="cubic") for y in Y]
-    T = [interpolate(t, nfs=nfs, interp="linear") for t in T]
-    V = [interpolate(t, nfs=nfs, interp="cubic") for t in V]
-    smoothed_V = [interpolate(t, nfs=nfs, interp="cubic") for t in smoothed_V]
+    X = [interpolate(x, nfs=nfs, n_points=n_points, interp="cubic") for x in X]
+    Y = [interpolate(y, nfs=nfs, n_points=n_points, interp="cubic") for y in Y]
+    T = [interpolate(t, nfs=nfs, n_points=n_points, interp="linear") for t in T]
+    V = [interpolate(t, nfs=nfs, n_points=n_points, interp="cubic") for t in V]
+    smoothed_V = [interpolate(t, nfs=nfs, n_points=n_points, interp="cubic") for t in smoothed_V]
 
     return X, Y, T, V, smoothed_V, bio_infos_
 
 
 if __name__ == '__main__':
-    X, Y, T, V, smoothed_V, bio_infos = get_preprocessed_data(53, 8)
-    print(bio_infos)
+    X, Y, T, V, smoothed_V, bio_infos = get_preprocessed_data(53, 8, n_points=183, smoothing_window=3, smooth_poly=2)
+
     for stroke in range(len(X)):
         plt.title(f"stroke {stroke}")
         plt.plot(T[stroke], V[stroke], label="originale Geschwendigkeit")
