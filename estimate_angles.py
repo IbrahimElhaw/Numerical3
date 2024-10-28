@@ -488,7 +488,7 @@ if __name__ == '__main__':
                                           glyph_list))
     print(len(combinations))
     random.shuffle(combinations)
-    sample_size = 300
+    sample_size = 700
     sampled_combinations = combinations[:sample_size]
 
     # person = 53
