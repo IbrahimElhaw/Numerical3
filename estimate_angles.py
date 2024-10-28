@@ -3,7 +3,7 @@ import math
 import os
 import warnings
 import random
-from multiprocessing import Pool
+from multiprocessing import Pool, cpu_count
 
 import pandas as pd
 from scipy.signal import argrelextrema
@@ -520,7 +520,6 @@ def check_file_exists(name, directory="synthetic/original"):
 #         parameter_matrix, angles_matrix, regenerated_curve2, end_DTW = represent_curve_lognormal(X1, Y1, T1, V, smoothed_V1, name_, V)
 #         represent_manipulated_curve_lognormal(parameter_matrix, angles_matrix, regenerated_curve2, smoothed_V1, X1, Y1, T1, end_DTW, name_, V)
 
-
 def process_combination(args):
     index, person, character, finger, glyph = args
     print(f"{index + 1}: {(person, character, finger, glyph)}")
@@ -544,6 +543,7 @@ def process_combination(args):
                                           smoothed_V1, X1, Y1, T1, end_DTW, name_, V)
 
 
+
 def main():
     # Load the list of persons
     persons_list = pd.read_csv('subject.csv', sep=',')["Z_PK"].to_numpy()
@@ -562,8 +562,15 @@ def main():
     args_list = [(index, person, character, finger, glyph) for index, (person, character, finger, glyph) in
                  enumerate(sampled_combinations)]
 
+    # Calculate number of workers based on desired CPU usage (70%)
+    total_cores = cpu_count()  # Get the total number of CPU cores
+    desired_cpu_usage = 0.7    # Desired CPU usage percentage
+    num_workers = max(1, int(total_cores * desired_cpu_usage))  # Calculate the number of workers
+
+    print(f"Using {num_workers} out of {total_cores} cores ({desired_cpu_usage * 100}% CPU usage)")
+
     # Use multiprocessing to execute each combination in parallel
-    with Pool() as pool:
+    with Pool(processes=num_workers) as pool:
         pool.map(process_combination, args_list)
 
 
