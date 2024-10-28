@@ -3,12 +3,13 @@ import math
 import os
 import warnings
 import random
+from multiprocessing import Pool
 
 import pandas as pd
 from scipy.signal import argrelextrema
 
 import numpy as np
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 
 from extract_phy_parameter import get_phy_param_mat, generate_curve_from_parameters
 from preprocess import get_preprocessed_data
@@ -378,7 +379,7 @@ def modify_stroke_parameters(D, sigma, mu, t_0, theta_s, theta_e, d_mu=0.05, d_s
         changed_D += 0.01
     return changed_D, changed_sigma, changed_mu, changed_t_0, changed_theta_s, changed_theta_e
 
-def represent_curve_lognormal(X_, Y_, T_, V, smoothed_V):
+def represent_curve_lognormal(X_, Y_, T_, V, smoothed_V, name, V1):
     parameter_matrix = get_phy_param_mat(T_, smoothed_V)
     regenerated_curve = generate_curve_from_parameters(parameter_matrix, T_)
     angles_matrix = get_angels_matrix(T_, X_, Y_, parameter_matrix)
@@ -417,7 +418,7 @@ def represent_curve_lognormal(X_, Y_, T_, V, smoothed_V):
 
 
 def represent_manipulated_curve_lognormal(parameter_matrix_, angles_matrix_, regenerated_curve2_, smoothed_V_, X_,
-                                          Y_, T_, end_DTW):
+                                          Y_, T_, end_DTW, name, V1):
     manipulated_parameters, manipulated_angles = modify_all_parameters(parameter_matrix_, angles_matrix_)
     manipulated_regenerated_curve = generate_curve_from_parameters(manipulated_parameters, T_)
     manipulated_full_X, manipulated_full_Y = full_redraw(smoothed_V_,
@@ -477,44 +478,94 @@ def check_file_exists(name, directory="synthetic/original"):
     file_path = os.path.join(directory, f"{name}.npz")
     return os.path.exists(file_path)
 
-if __name__ == '__main__':
-    # 21.803250541503335
+# if __name__ == '__main__':
+#     # 21.803250541503335
+#     persons_list = pd.read_csv('subject.csv', sep=',')["Z_PK"].to_numpy()
+#     character_list = range(10)
+#     finger_list = ("index", "thumb")
+#     glyph_list = range(4)
+#
+#     combinations = list(itertools.product(persons_list, character_list, finger_list,
+#                                           glyph_list))
+#     print(len(combinations))
+#     random.shuffle(combinations)
+#     sample_size = 10
+#     sampled_combinations = combinations[:sample_size]
+#
+#     # person = 53
+#     # character = 6
+#     # X1, Y1, T1, V1, smoothed_V1, bio_infos = get_preprocessed_data(person, character)
+#     # name = f"{person}_{character}_{"index"}_{0}_{bio_infos[0]}_{bio_infos[1]}_{bio_infos[2]}"
+#     # save_data(X1, Y1, V1, name)
+#     #
+#     # parameter_matrix, angles_matrix, regenerated_curve2 = represent_curve_lognormal(X1, Y1, T1, V1, smoothed_V1)
+#     # represent_manipulated_curve_lognormal(parameter_matrix, angles_matrix, regenerated_curve2, smoothed_V1, X1, Y1, T1)
+#
+#
+#     for index, (person, character, finger, glyph) in enumerate(sampled_combinations):
+#         print(f"{index+1}: {(person, character, finger, glyph)}")
+#         try:
+#             X1, Y1, T1, V, smoothed_V1, bio_infos = get_preprocessed_data(person, character, finger=finger, glyph=glyph)
+#         except ValueError:
+#             print("glyph misses")
+#             continue
+#
+#         # bio_infos: tuple (sex, hand, age)
+#         name_ = f"{person}_{character}_{finger}_{glyph}_{bio_infos[0]}_{bio_infos[1]}_{bio_infos[2]}"
+#         if check_file_exists(name_):
+#             print("exists")
+#             continue
+#
+#         save_data(X1, Y1, V, name_)
+#         parameter_matrix, angles_matrix, regenerated_curve2, end_DTW = represent_curve_lognormal(X1, Y1, T1, V, smoothed_V1, name_, V)
+#         represent_manipulated_curve_lognormal(parameter_matrix, angles_matrix, regenerated_curve2, smoothed_V1, X1, Y1, T1, end_DTW, name_, V)
+
+
+def process_combination(args):
+    index, person, character, finger, glyph = args
+    print(f"{index + 1}: {(person, character, finger, glyph)}")
+    try:
+        X1, Y1, T1, V, smoothed_V1, bio_infos = get_preprocessed_data(person, character, finger=finger, glyph=glyph)
+    except ValueError:
+        print("glyph misses")
+        return
+
+    # bio_infos: tuple (sex, hand, age)
+    name_ = f"{person}_{character}_{finger}_{glyph}_{bio_infos[0]}_{bio_infos[1]}_{bio_infos[2]}"
+    if check_file_exists(name_):
+        print("exists")
+        return
+
+    save_data(X1, Y1, V, name_)
+    parameter_matrix, angles_matrix, regenerated_curve2, end_DTW = represent_curve_lognormal(
+        X1, Y1, T1, V, smoothed_V1, name_, V
+    )
+    represent_manipulated_curve_lognormal(parameter_matrix, angles_matrix, regenerated_curve2,
+                                          smoothed_V1, X1, Y1, T1, end_DTW, name_, V)
+
+
+def main():
+    # Load the list of persons
     persons_list = pd.read_csv('subject.csv', sep=',')["Z_PK"].to_numpy()
     character_list = range(10)
     finger_list = ("index", "thumb")
     glyph_list = range(4)
 
-    combinations = list(itertools.product(persons_list, character_list, finger_list,
-                                          glyph_list))
-    print(len(combinations))
+    # Generate all combinations
+    combinations = list(itertools.product(persons_list, character_list, finger_list, glyph_list))
+    print(f"Total combinations: {len(combinations)}")
+
+    # Shuffle and sample
     random.shuffle(combinations)
-    sample_size = 700
+    sample_size = 10
     sampled_combinations = combinations[:sample_size]
+    args_list = [(index, person, character, finger, glyph) for index, (person, character, finger, glyph) in
+                 enumerate(sampled_combinations)]
 
-    # person = 53
-    # character = 6
-    # X1, Y1, T1, V1, smoothed_V1, bio_infos = get_preprocessed_data(person, character)
-    # name = f"{person}_{character}_{"index"}_{0}_{bio_infos[0]}_{bio_infos[1]}_{bio_infos[2]}"
-    # save_data(X1, Y1, V1, name)
-    #
-    # parameter_matrix, angles_matrix, regenerated_curve2 = represent_curve_lognormal(X1, Y1, T1, V1, smoothed_V1)
-    # represent_manipulated_curve_lognormal(parameter_matrix, angles_matrix, regenerated_curve2, smoothed_V1, X1, Y1, T1)
+    # Use multiprocessing to execute each combination in parallel
+    with Pool() as pool:
+        pool.map(process_combination, args_list)
 
 
-    for index, (person, character, finger, glyph) in enumerate(sampled_combinations):
-        print(f"{index+1}: {(person, character, finger, glyph)}")
-        try:
-            X1, Y1, T1, V1, smoothed_V1, bio_infos = get_preprocessed_data(person, character, finger=finger, glyph=glyph)
-        except ValueError:
-            print("glyph misses")
-            continue
-
-        # bio_infos: tuple (sex, hand, age)
-        name = f"{person}_{character}_{finger}_{glyph}_{bio_infos[0]}_{bio_infos[1]}_{bio_infos[2]}"
-        if check_file_exists(name):
-            print("exists")
-            continue
-
-        save_data(X1, Y1, V1, name)
-        parameter_matrix, angles_matrix, regenerated_curve2, end_DTW = represent_curve_lognormal(X1, Y1, T1, V1, smoothed_V1)
-        represent_manipulated_curve_lognormal(parameter_matrix, angles_matrix, regenerated_curve2, smoothed_V1, X1, Y1, T1, end_DTW)
+if __name__ == '__main__':
+    main()
