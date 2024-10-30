@@ -76,7 +76,7 @@ def retrieve_data(subject=8, character=8, finger="index", glyph_index=None):
         timestamps.append(timestamps_one_stroke)
     for stroke in x_values:
         if len(stroke)<10:
-            print(f"strokes too short: {subject}, {character}")
+            # print(f"strokes too short: {subject}, {character}")
             break
     return x_values, y_values, timestamps, bio_infos
 
