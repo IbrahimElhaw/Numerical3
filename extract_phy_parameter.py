@@ -331,19 +331,18 @@ def generate_curve_from_parameters(para_matrix, timestamps):
 
 
 if __name__ == '__main__':
-    X, Y, T, V, smoothed_V, bio_infos = get_preprocessed_data(53, 8, smoothing_window=3, smooth_poly=5)
-    parameter_matrix = get_phy_param_mat(T, smoothed_V)
-    for plane in parameter_matrix:
-        print("new plane")
-        for line in plane:
-            print(line)
-    regenerated_curve = generate_curve_from_parameters(parameter_matrix, T)
+    X, Y, T, V, smoothed_V, bio_infos = get_preprocessed_data(1, 1, smoothing_window=3, smooth_poly=5)
+    # parameter_matrix = get_phy_param_mat(T, smoothed_V)
+    # for plane in parameter_matrix:
+    #     print("new plane")
+    #     for line in plane:
+    #         print(line)
+    # regenerated_curve = generate_curve_from_parameters(parameter_matrix, T)
     for stroke in range(len(T)):
-        pass
-        plt.plot(T[stroke], regenerated_curve[stroke], label="regenerated", color="black")
+        # plt.plot(T[stroke], regenerated_curve[stroke], label="regenerated", color="black")
         plt.plot(T[stroke], smoothed_V[stroke], label="smoothed", color="red")
         plt.plot(T[stroke], V[stroke], label="original", color="grey")
 
         plt.legend()
         plt.show()
-    print(np.shape(parameter_matrix))
+    # print(np.shape(parameter_matrix))

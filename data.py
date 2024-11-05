@@ -82,6 +82,6 @@ def retrieve_data(subject=8, character=8, finger="index", glyph_index=None):
 
 
 if __name__ == '__main__':
-    X, Y, _, bio_infos = retrieve_data(53, 8, "index", 3)
+    X, Y, _, bio_infos = retrieve_data(1, 1, "index", 0)
     show_data(X, Y)
     print(bio_infos)

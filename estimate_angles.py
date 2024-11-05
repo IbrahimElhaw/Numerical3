@@ -478,101 +478,101 @@ def check_file_exists(name, directory="synthetic/original"):
     file_path = os.path.join(directory, f"{name}.npz")
     return os.path.exists(file_path)
 
-# if __name__ == '__main__':
-#     # 21.803250541503335
-#     persons_list = pd.read_csv('subject.csv', sep=',')["Z_PK"].to_numpy()
-#     character_list = range(10)
-#     finger_list = ("index", "thumb")
-#     glyph_list = range(4)
-#
-#     combinations = list(itertools.product(persons_list, character_list, finger_list,
-#                                           glyph_list))
-#     print(len(combinations))
-#     random.shuffle(combinations)
-#     sample_size = 10
-#     sampled_combinations = combinations[:sample_size]
-#
-#     # person = 53
-#     # character = 6
-#     # X1, Y1, T1, V1, smoothed_V1, bio_infos = get_preprocessed_data(person, character)
-#     # name = f"{person}_{character}_{"index"}_{0}_{bio_infos[0]}_{bio_infos[1]}_{bio_infos[2]}"
-#     # save_data(X1, Y1, V1, name)
-#     #
-#     # parameter_matrix, angles_matrix, regenerated_curve2 = represent_curve_lognormal(X1, Y1, T1, V1, smoothed_V1)
-#     # represent_manipulated_curve_lognormal(parameter_matrix, angles_matrix, regenerated_curve2, smoothed_V1, X1, Y1, T1)
-#
-#
-#     for index, (person, character, finger, glyph) in enumerate(sampled_combinations):
-#         print(f"{index+1}: {(person, character, finger, glyph)}")
-#         try:
-#             X1, Y1, T1, V, smoothed_V1, bio_infos = get_preprocessed_data(person, character, finger=finger, glyph=glyph)
-#         except ValueError:
-#             print("glyph misses")
-#             continue
-#
-#         # bio_infos: tuple (sex, hand, age)
-#         name_ = f"{person}_{character}_{finger}_{glyph}_{bio_infos[0]}_{bio_infos[1]}_{bio_infos[2]}"
-#         if check_file_exists(name_):
-#             print("exists")
-#             continue
-#
-#         save_data(X1, Y1, V, name_)
-#         parameter_matrix, angles_matrix, regenerated_curve2, end_DTW = represent_curve_lognormal(X1, Y1, T1, V, smoothed_V1, name_, V)
-#         represent_manipulated_curve_lognormal(parameter_matrix, angles_matrix, regenerated_curve2, smoothed_V1, X1, Y1, T1, end_DTW, name_, V)
-
-def process_combination(args):
-    index, person, character, finger, glyph = args
-    print(f"{index + 1}: {(person, character, finger, glyph)}")
-    try:
-        X1, Y1, T1, V, smoothed_V1, bio_infos = get_preprocessed_data(person, character, finger=finger, glyph=glyph)
-    except ValueError:
-        print("glyph misses")
-        return
-
-    # bio_infos: tuple (sex, hand, age)
-    name_ = f"{person}_{character}_{finger}_{glyph}_{bio_infos[0]}_{bio_infos[1]}_{bio_infos[2]}"
-    if check_file_exists(name_):
-        print("exists")
-        return
-
-    save_data(X1, Y1, V, name_)
-    parameter_matrix, angles_matrix, regenerated_curve2, end_DTW = represent_curve_lognormal(
-        X1, Y1, T1, V, smoothed_V1, name_, V
-    )
-    represent_manipulated_curve_lognormal(parameter_matrix, angles_matrix, regenerated_curve2,
-                                          smoothed_V1, X1, Y1, T1, end_DTW, name_, V)
-
-
-
-def main():
-    # Load the list of persons
+if __name__ == '__main__':
+    # 21.803250541503335
     persons_list = pd.read_csv('subject.csv', sep=',')["Z_PK"].to_numpy()
     character_list = range(10)
     finger_list = ("index", "thumb")
     glyph_list = range(4)
 
-    # Generate all combinations
-    combinations = list(itertools.product(persons_list, character_list, finger_list, glyph_list))
-    print(f"Total combinations: {len(combinations)}")
-
-    # Shuffle and sample
+    combinations = list(itertools.product(persons_list, character_list, finger_list,
+                                          glyph_list))
+    print(len(combinations))
     random.shuffle(combinations)
-    sample_size = 10
+    sample_size = 100
     sampled_combinations = combinations[:sample_size]
-    args_list = [(index, person, character, finger, glyph) for index, (person, character, finger, glyph) in
-                 enumerate(sampled_combinations)]
 
-    # Calculate number of workers based on desired CPU usage (70%)
-    total_cores = cpu_count()  # Get the total number of CPU cores
-    desired_cpu_usage = 0.7    # Desired CPU usage percentage
-    num_workers = max(1, int(total_cores * desired_cpu_usage))  # Calculate the number of workers
-
-    print(f"Using {num_workers} out of {total_cores} cores ({desired_cpu_usage * 100}% CPU usage)")
-
-    # Use multiprocessing to execute each combination in parallel
-    with Pool(processes=num_workers) as pool:
-        pool.map(process_combination, args_list)
+    # person = 53
+    # character = 6
+    # X1, Y1, T1, V1, smoothed_V1, bio_infos = get_preprocessed_data(person, character)
+    # name = f"{person}_{character}_{"index"}_{0}_{bio_infos[0]}_{bio_infos[1]}_{bio_infos[2]}"
+    # save_data(X1, Y1, V1, name)
+    #
+    # parameter_matrix, angles_matrix, regenerated_curve2 = represent_curve_lognormal(X1, Y1, T1, V1, smoothed_V1)
+    # represent_manipulated_curve_lognormal(parameter_matrix, angles_matrix, regenerated_curve2, smoothed_V1, X1, Y1, T1)
 
 
-if __name__ == '__main__':
-    main()
+    for index, (person, character, finger, glyph) in enumerate(sampled_combinations):
+        print(f"{index+1}: {(person, character, finger, glyph)}")
+        try:
+            X1, Y1, T1, V, smoothed_V1, bio_infos = get_preprocessed_data(person, character, finger=finger, glyph=glyph)
+        except ValueError:
+            print("glyph misses")
+            continue
+
+        # bio_infos: tuple (sex, hand, age)
+        name_ = f"{person}_{character}_{finger}_{glyph}_{bio_infos[0]}_{bio_infos[1]}_{bio_infos[2]}"
+        if check_file_exists(name_):
+            print("exists")
+            continue
+
+        save_data(X1, Y1, V, name_)
+        parameter_matrix, angles_matrix, regenerated_curve2, end_DTW = represent_curve_lognormal(X1, Y1, T1, V, smoothed_V1, name_, V)
+        represent_manipulated_curve_lognormal(parameter_matrix, angles_matrix, regenerated_curve2, smoothed_V1, X1, Y1, T1, end_DTW, name_, V)
+
+# def process_combination(args):
+#     index, person, character, finger, glyph = args
+#     print(f"{index + 1}: {(person, character, finger, glyph)}")
+#     try:
+#         X1, Y1, T1, V, smoothed_V1, bio_infos = get_preprocessed_data(person, character, finger=finger, glyph=glyph)
+#     except ValueError:
+#         print("glyph misses")
+#         return
+#
+#     # bio_infos: tuple (sex, hand, age)
+#     name_ = f"{person}_{character}_{finger}_{glyph}_{bio_infos[0]}_{bio_infos[1]}_{bio_infos[2]}"
+#     if check_file_exists(name_):
+#         print("exists")
+#         return
+#
+#     save_data(X1, Y1, V, name_)
+#     parameter_matrix, angles_matrix, regenerated_curve2, end_DTW = represent_curve_lognormal(
+#         X1, Y1, T1, V, smoothed_V1, name_, V
+#     )
+#     represent_manipulated_curve_lognormal(parameter_matrix, angles_matrix, regenerated_curve2,
+#                                           smoothed_V1, X1, Y1, T1, end_DTW, name_, V)
+#
+#
+#
+# def main():
+#     # Load the list of persons
+#     persons_list = pd.read_csv('subject.csv', sep=',')["Z_PK"].to_numpy()
+#     character_list = range(10)
+#     finger_list = ("index", "thumb")
+#     glyph_list = range(4)
+#
+#     # Generate all combinations
+#     combinations = list(itertools.product(persons_list, character_list, finger_list, glyph_list))
+#     print(f"Total combinations: {len(combinations)}")
+#
+#     # Shuffle and sample
+#     random.shuffle(combinations)
+#     sample_size = 10
+#     sampled_combinations = combinations[:sample_size]
+#     args_list = [(index, person, character, finger, glyph) for index, (person, character, finger, glyph) in
+#                  enumerate(sampled_combinations)]
+#
+#     # Calculate number of workers based on desired CPU usage (70%)
+#     total_cores = cpu_count()  # Get the total number of CPU cores
+#     desired_cpu_usage = 0.7    # Desired CPU usage percentage
+#     num_workers = max(1, int(total_cores * desired_cpu_usage))  # Calculate the number of workers
+#
+#     print(f"Using {num_workers} out of {total_cores} cores ({desired_cpu_usage * 100}% CPU usage)")
+#
+#     # Use multiprocessing to execute each combination in parallel
+#     with Pool(processes=num_workers) as pool:
+#         pool.map(process_combination, args_list)
+#
+#
+# if __name__ == '__main__':
+#     main()

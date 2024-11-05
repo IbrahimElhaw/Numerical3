@@ -8,8 +8,10 @@ frequency = 150
 
 def calculate_velocity(x, y, timestamps):
     velocity = []
+    # print("n_strokes: ", len(x))
     for stroke in (range(len(x))):
         velocity_one_stroke = [0]
+        # print("n_points: ", len(x[stroke]))
         for i in range(1, len(x[stroke])):
             distance = ((x[stroke][i] - x[stroke][i-1]) ** 2 + (
                     y[stroke][i] - y[stroke][i-1]) ** 2) ** 0.5
@@ -81,16 +83,14 @@ def interpolate(y_values, nfs=2, n_points=None, interp="cubic"):
     f = interp1d(time, y_values, kind=interp)
     return f(time_inter)
 
+
 def shift_to_origin(x, y):
     min_x = np.min(np.concatenate(x))
     min_y = np.min(np.concatenate(y))
 
-    x[0] -= min_x
-    y[0] -= min_y
-
-    if len(x) == 2:
-        x[1] -= min_x
-        y[1] -= min_y
+    for i in range(len(x)):
+        x[i] -= min_x
+        y[i] -= min_y
 
     return x, y
 
@@ -102,23 +102,25 @@ def get_preprocessed_data(person,
                           nfs=15,
                           n_points=None,
                           finger="index",
-                          glyph=None):
+                          glyph=0):
     X, Y, T, bio_infos_ = data.retrieve_data(person, charachter, finger, glyph)
     X, Y = shift_to_origin(X, Y)
     V = calculate_velocity(X, Y, T)
     smoothed_V = smooth_V(V,  smoothing_window, int(smooth_poly))
-    X = [interpolate(x, nfs=nfs, n_points=n_points, interp="cubic") for x in X]
-    Y = [interpolate(y, nfs=nfs, n_points=n_points, interp="cubic") for y in Y]
-    T = [interpolate(t, nfs=nfs, n_points=n_points, interp="linear") for t in T]
-    V = [interpolate(t, nfs=nfs, n_points=n_points, interp="cubic") for t in V]
-    smoothed_V = [interpolate(t, nfs=nfs, n_points=n_points, interp="cubic") for t in smoothed_V]
+    if nfs is not None or n_points is not None:
+        print("interpolated")
+        X = [interpolate(x, nfs=nfs, n_points=n_points, interp="cubic") for x in X]
+        Y = [interpolate(y, nfs=nfs, n_points=n_points, interp="cubic") for y in Y]
+        T = [interpolate(t, nfs=nfs, n_points=n_points, interp="linear") for t in T]
+        V = [interpolate(t, nfs=nfs, n_points=n_points, interp="cubic") for t in V]
+        smoothed_V = [interpolate(t, nfs=nfs, n_points=n_points, interp="cubic") for t in smoothed_V]
 
     return X, Y, T, V, smoothed_V, bio_infos_
 
 
 if __name__ == '__main__':
-    X, Y, T, V, smoothed_V, bio_infos = get_preprocessed_data(53, 8, n_points=183, smoothing_window=3, smooth_poly=2)
-
+    X, Y, T, V, smoothed_V, bio_infos = get_preprocessed_data(1, 1, n_points=183, smoothing_window=3, smooth_poly=2)
+    print(len(X[0]))
     for stroke in range(len(X)):
         plt.title(f"stroke {stroke}")
         plt.plot(T[stroke], V[stroke], label="originale Geschwendigkeit")
